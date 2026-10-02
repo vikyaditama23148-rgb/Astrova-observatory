@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { PLANET_BY_ID, SUN, isPlanetId } from "@/data/planets";
 import type { CameraMode } from "@/lib/camera/states";
 
@@ -10,6 +11,24 @@ function fmtDays(days: number): string {
   if (days > 700) return `≈ ${(days / 365.256).toLocaleString("id-ID", { maximumFractionDigits: 1 })} tahun`;
   return `≈ ${days.toLocaleString("id-ID", { maximumFractionDigits: 0 })} hari`;
 }
+
+
+const CARD_CSS = `
+.obs-card { transition: transform 0.3s ease; will-change: transform; }
+.obs-card.is-collapsed { transform: translateX(calc(-100% - 24px)); pointer-events: none; }
+.obs-card-tab {
+  position: absolute; z-index: 5; bottom: 120px; left: calc(min(340px, 100% - 36px) + 18px);
+  min-width: 44px; min-height: 44px; padding: 0 12px;
+  display: flex; align-items: center; gap: 6px;
+  background: var(--panel); border: 1px solid var(--line); border-left: 0;
+  border-radius: 0 10px 10px 0; cursor: pointer; font-size: 0.8rem; color: var(--text);
+  backdrop-filter: blur(6px); transition: left 0.3s ease;
+}
+.obs-card-tab.is-collapsed { left: 0; }
+@media (max-width: 640px) {
+  .obs-card-tab { bottom: 150px; }
+}
+`;
 
 interface Props {
   id: string;
@@ -23,11 +42,27 @@ interface Props {
 
 export function InfoCard({ id, mode, onExplore, onPov, onBack, rotationEnabled, onToggleRotation }: Props) {
   const planet = isPlanetId(id) ? PLANET_BY_ID[id] : null;
+  // On phones the panel starts collapsed so it never hides the planet that was just tapped.
+  const [collapsed, setCollapsed] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches);
+  const name = planet?.name ?? SUN.name;
   const explored = mode === "PLANET_ORBIT";
   const pov = mode === "POV_PLANET";
 
   return (
-    <section className="obs-card" aria-live="polite" aria-label={`Informasi ${planet?.name ?? SUN.name}`}>
+    <>
+    <style>{CARD_CSS}</style>
+    <button
+      type="button"
+      className={`obs-card-tab${collapsed ? " is-collapsed" : ""}`}
+      onClick={() => setCollapsed((v) => !v)}
+      aria-expanded={!collapsed}
+      aria-controls="obs-info-card"
+      aria-label={collapsed ? `Buka informasi ${name}` : `Tutup informasi ${name}`}
+    >
+      <span aria-hidden="true">{collapsed ? "›" : "‹"}</span>
+      <span>{collapsed ? "Info" : "Tutup"}</span>
+    </button>
+    <section id="obs-info-card" className={`obs-card${collapsed ? " is-collapsed" : ""}`} inert={collapsed} aria-live="polite" aria-label={`Informasi ${name}`}>
       <p className="obs-eyebrow">{planet ? `Planet ${planet.kind}` : "Bintang"}</p>
       <h2>{planet?.name ?? SUN.name}</h2>
       {planet ? (
@@ -60,5 +95,6 @@ export function InfoCard({ id, mode, onExplore, onPov, onBack, rotationEnabled, 
         <button type="button" onClick={onBack}>Kembali ke Tata Surya</button>
       </div>
     </section>
+    </>
   );
 }
