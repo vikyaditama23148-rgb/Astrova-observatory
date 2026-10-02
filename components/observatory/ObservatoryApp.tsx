@@ -132,6 +132,12 @@ export function ObservatoryApp() {
       <footer className="obs-footer">
         <PlanetNav selectedId={view.planetId} onSelect={onSelect} />
         <SimControls speed={speed} onSpeed={changeSpeed} timeLabelId="obs-time" />
+        <p style={{ margin: 0, fontSize: "0.68rem", color: "var(--muted)", textAlign: "center" }}>
+          <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>Solar System Scope</a>
+          {" berlisensi "}
+          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>CC BY 4.0</a>
+          , berbasis Data NASA
+        </p>
       </footer>
 
       {!ready && !noWebgl && (
