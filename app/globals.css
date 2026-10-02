@@ -26,7 +26,7 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid
 .obs-quality select { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; min-height: 32px; }
 .obs-return { color: var(--text); font-size: 0.8rem; text-decoration: none; border: 1px solid var(--line); padding: 6px 10px; border-radius: 6px; background: var(--panel); }
 
-.obs-card { position: absolute; left: 18px; bottom: 120px; width: min(340px, calc(100% - 36px)); max-height: 55vh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; backdrop-filter: blur(6px); }
+.obs-card { overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; backdrop-filter: blur(6px); }
 .obs-card h2 { margin: 2px 0 8px; font-size: 1.3rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .obs-eyebrow { margin: 0; font-size: 0.7rem; color: var(--accent); letter-spacing: 0.14em; text-transform: uppercase; }
 .obs-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin: 0 0 10px; }
@@ -58,7 +58,8 @@ button:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid
 .obs-fallback { max-width: 640px; margin: 80px auto 0; padding: 0 20px; overflow: auto; max-height: calc(100% - 100px); line-height: 1.5; }
 
 @media (max-width: 640px) {
-  .obs-card { bottom: 150px; max-height: 40vh; }
+  .obs-nav { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; width: 100%; padding-bottom: 4px; scrollbar-width: thin; }
+  .obs-nav button { flex: none; white-space: nowrap; }
   .obs-badge { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {

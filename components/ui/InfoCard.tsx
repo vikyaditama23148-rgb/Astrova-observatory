@@ -14,19 +14,30 @@ function fmtDays(days: number): string {
 
 
 const CARD_CSS = `
-.obs-card { transition: transform 0.3s ease; will-change: transform; }
-.obs-card.is-collapsed { transform: translateX(calc(-100% - 24px)); pointer-events: none; }
-.obs-card-tab {
-  position: absolute; z-index: 5; bottom: 120px; left: calc(min(340px, 100% - 36px) + 18px);
-  min-width: 44px; min-height: 44px; padding: 0 12px;
-  display: flex; align-items: center; gap: 6px;
-  background: var(--panel); border: 1px solid var(--line); border-left: 0;
-  border-radius: 0 10px 10px 0; cursor: pointer; font-size: 0.8rem; color: var(--text);
-  backdrop-filter: blur(6px); transition: left 0.3s ease;
+.obs-card-wrap {
+  position: absolute; left: 0; right: 0; top: 84px; bottom: 170px; z-index: 4;
+  display: flex; align-items: center; justify-content: center; padding: 0 18px;
+  pointer-events: none;
 }
-.obs-card-tab.is-collapsed { left: 0; }
+.obs-card-wrap .obs-card {
+  position: relative; left: auto; bottom: auto; pointer-events: auto;
+  width: min(380px, 100%); max-height: 100%;
+  transition: transform 0.3s ease, opacity 0.3s ease; will-change: transform;
+}
+.obs-card-wrap .obs-card.is-collapsed { transform: translateX(-110vw); opacity: 0; pointer-events: none; }
+.obs-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.obs-card-close {
+  flex: none; min-width: 44px; min-height: 44px; margin: -6px -8px 0 0; padding: 0 12px;
+  background: transparent; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; font-size: 0.8rem; color: var(--text);
+}
+.obs-card-tab {
+  position: absolute; z-index: 5; top: 50%; left: 0; transform: translateY(-50%);
+  min-width: 44px; min-height: 52px; padding: 0 12px; display: flex; align-items: center; gap: 6px;
+  background: var(--panel); border: 1px solid var(--line); border-left: 0; border-radius: 0 10px 10px 0;
+  cursor: pointer; font-size: 0.8rem; color: var(--text); backdrop-filter: blur(6px);
+}
 @media (max-width: 640px) {
-  .obs-card-tab { bottom: 150px; }
+  .obs-card-wrap { top: 104px; bottom: 200px; }
 }
 `;
 
@@ -51,20 +62,28 @@ export function InfoCard({ id, mode, onExplore, onPov, onBack, rotationEnabled, 
   return (
     <>
     <style>{CARD_CSS}</style>
-    <button
-      type="button"
-      className={`obs-card-tab${collapsed ? " is-collapsed" : ""}`}
-      onClick={() => setCollapsed((v) => !v)}
-      aria-expanded={!collapsed}
-      aria-controls="obs-info-card"
-      aria-label={collapsed ? `Buka informasi ${name}` : `Tutup informasi ${name}`}
-    >
-      <span aria-hidden="true">{collapsed ? "›" : "‹"}</span>
-      <span>{collapsed ? "Info" : "Tutup"}</span>
-    </button>
+    {collapsed && (
+      <button
+        type="button"
+        className="obs-card-tab"
+        onClick={() => setCollapsed(false)}
+        aria-expanded={false}
+        aria-controls="obs-info-card"
+        aria-label={`Buka informasi ${name}`}
+      >
+        <span aria-hidden="true">›</span>
+        <span>Info</span>
+      </button>
+    )}
+    <div className="obs-card-wrap">
     <section id="obs-info-card" className={`obs-card${collapsed ? " is-collapsed" : ""}`} inert={collapsed} aria-live="polite" aria-label={`Informasi ${name}`}>
-      <p className="obs-eyebrow">{planet ? `Planet ${planet.kind}` : "Bintang"}</p>
-      <h2>{planet?.name ?? SUN.name}</h2>
+      <div className="obs-card-head">
+        <div>
+          <p className="obs-eyebrow">{planet ? `Planet ${planet.kind}` : "Bintang"}</p>
+          <h2>{name}</h2>
+        </div>
+        <button type="button" className="obs-card-close" onClick={() => setCollapsed(true)} aria-label={`Tutup informasi ${name}`}>Tutup ‹</button>
+      </div>
       {planet ? (
         <dl className="obs-stats">
           <div><dt>Jarak dari Matahari</dt><dd>{planet.semiMajorAxisAu.toLocaleString("id-ID")} AU</dd></div>
@@ -95,6 +114,7 @@ export function InfoCard({ id, mode, onExplore, onPov, onBack, rotationEnabled, 
         <button type="button" onClick={onBack}>Kembali ke Tata Surya</button>
       </div>
     </section>
+    </div>
     </>
   );
 }
