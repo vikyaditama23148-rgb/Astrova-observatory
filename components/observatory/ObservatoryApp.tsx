@@ -2,7 +2,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { INITIAL_VIEW, viewReducer } from "@/lib/camera/states";
-import { parseContext } from "@/lib/integration/params";
+import { MAIN_SITE_LOGIN_URL, MAIN_SITE_ORIGIN, parseContext } from "@/lib/integration/params";
 import { detectCapabilities, type Capabilities } from "@/lib/performance/capabilities";
 import { QUALITY, QUALITY_STORAGE_KEY, isQualityChoice, resolveQuality, type QualityChoice } from "@/lib/performance/quality";
 import { formatSimTime, type SpeedMultiplier } from "@/lib/simulation/clock";
@@ -111,7 +111,7 @@ export function ObservatoryApp() {
         <div className="obs-header-right">
           <span className="obs-badge" title="Ukuran dan jarak dikompresi agar semua benda muat di layar">Visualisasi tidak sesuai skala</span>
           <QualityMenu choice={choice} resolved={resolved} onChange={changeQuality} />
-          {returnTo && <a className="obs-return" href={returnTo}>↩ Kembali ke Astrova</a>}
+          <a className="obs-return" href={returnTo ?? MAIN_SITE_LOGIN_URL}>↩ Kembali ke Astrova</a>
         </div>
       </header>
 
@@ -132,6 +132,10 @@ export function ObservatoryApp() {
       <footer className="obs-footer">
         <PlanetNav selectedId={view.planetId} onSelect={onSelect} />
         <SimControls speed={speed} onSpeed={changeSpeed} timeLabelId="obs-time" />
+        <p style={{ margin: 0, fontSize: "0.68rem", color: "var(--muted)", textAlign: "center" }}>
+          Astrova Observatory dikembangkan oleh Viky Aditama, bagian dari{" "}
+          <a href={MAIN_SITE_ORIGIN} style={{ color: "inherit" }}>Astrova</a>.
+        </p>
         <p style={{ margin: 0, fontSize: "0.68rem", color: "var(--muted)", textAlign: "center" }}>
           <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noopener noreferrer" style={{ color: "inherit" }}>Solar System Scope</a>
           {" berlisensi "}

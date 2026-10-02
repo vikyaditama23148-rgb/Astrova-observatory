@@ -8,10 +8,15 @@ export interface ObservatoryContext {
   learningContext: string | null;
 }
 
-/** Hosts allowed for absolute returnTo URLs. Extend via NEXT_PUBLIC_ALLOWED_RETURN_HOSTS (comma-separated). */
+/** Main Astrova site. The Observatory is a branch of it, so its host is always allowed in absolute returnTo URLs. */
+export const MAIN_SITE_ORIGIN = "https://astrova-two.vercel.app";
+export const MAIN_SITE_LOGIN_URL = `${MAIN_SITE_ORIGIN}/login`;
+
+/** Hosts allowed for absolute returnTo URLs: the main site plus NEXT_PUBLIC_ALLOWED_RETURN_HOSTS (comma-separated). */
 export function allowedHosts(): string[] {
   const env = process.env.NEXT_PUBLIC_ALLOWED_RETURN_HOSTS ?? "";
-  return env.split(",").map((h) => h.trim().toLowerCase()).filter(Boolean);
+  const extra = env.split(",").map((h) => h.trim().toLowerCase()).filter(Boolean);
+  return [new URL(MAIN_SITE_ORIGIN).hostname, ...extra];
 }
 
 /**
