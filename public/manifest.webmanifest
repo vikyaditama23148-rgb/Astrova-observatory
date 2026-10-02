@@ -1,0 +1,10 @@
+{
+  "name": "Astrova Observatory",
+  "short_name": "Observatory",
+  "description": "Observatorium 3D Tata Surya dari ekosistem Astrova.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#02030a",
+  "theme_color": "#02030a",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
