@@ -74,7 +74,16 @@ export function ObservatoryApp() {
 
   const changeSpeed = useCallback((s: SpeedMultiplier) => { sim.current.speed = s; setSpeed(s); }, []);
   const toggleRotation = useCallback(() => {
-    setRotationEnabled((v) => { sim.current.rotationEnabled = !v; return !v; });
+    const next = !sim.current.rotationEnabled;
+    sim.current.rotationEnabled = next;
+    setRotationEnabled(next);
+  }, []);
+  const resetTime = useCallback(() => {
+    // Hours = 0 puts every planet (and the Moon / asteroids) back at its starting phase; speed and pause state are kept.
+    sim.current.hours = 0;
+    sim.current.rotHours = 0;
+    const el = document.getElementById("obs-time");
+    if (el) el.textContent = formatSimTime(0);
   }, []);
   const changeQuality = useCallback((c: QualityChoice) => {
     setChoice(c);
@@ -108,30 +117,22 @@ export function ObservatoryApp() {
           <h1>ASTROVA OBSERVATORY</h1>
           <p>Jelajahi Tata Surya.</p>
         </div>
-        <div className="obs-header-right">
+        <div className="obs-header-right" style={{ flexWrap: "nowrap" }}>
           <span className="obs-badge" title="Ukuran dan jarak dikompresi agar semua benda muat di layar">Visualisasi tidak sesuai skala</span>
           <QualityMenu choice={choice} resolved={resolved} onChange={changeQuality} />
-          <a className="obs-return" href={returnTo ?? MAIN_SITE_LOGIN_URL}>↩ Kembali ke Astrova</a>
+          <a className="obs-return" style={{ whiteSpace: "nowrap", flex: "none" }} href={returnTo ?? MAIN_SITE_LOGIN_URL}>↩ Kembali ke Astrova</a>
         </div>
       </header>
 
       {debug && <div id="obs-debug" className="obs-debug" aria-hidden="true">memuat statistik…</div>}
 
       {view.planetId && (
-        <InfoCard
-          id={view.planetId}
-          mode={view.mode}
-          onExplore={() => dispatch({ type: "explore" })}
-          onPov={() => view.planetId && dispatch({ type: "pov", planetId: view.planetId })}
-          onBack={() => dispatch({ type: "reset" })}
-          rotationEnabled={rotationEnabled}
-          onToggleRotation={toggleRotation}
-        />
+        <InfoCard id={view.planetId} onBack={() => dispatch({ type: "reset" })} rotationEnabled={rotationEnabled} onToggleRotation={toggleRotation} />
       )}
 
       <footer className="obs-footer">
         <PlanetNav selectedId={view.planetId} onSelect={onSelect} />
-        <SimControls speed={speed} onSpeed={changeSpeed} timeLabelId="obs-time" />
+        <SimControls speed={speed} onSpeed={changeSpeed} onReset={resetTime} timeLabelId="obs-time" />
         <p style={{ margin: 0, fontSize: "0.68rem", color: "var(--muted)", textAlign: "center" }}>
           Astrova Observatory dikembangkan oleh Viky Aditama, bagian dari{" "}
           <a href={MAIN_SITE_ORIGIN} style={{ color: "inherit" }}>Astrova</a>.

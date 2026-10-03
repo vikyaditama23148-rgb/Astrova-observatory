@@ -11,9 +11,14 @@ const OPTIONS: { value: QualityChoice; label: string }[] = [
 
 export function QualityMenu({ choice, resolved, onChange }: { choice: QualityChoice; resolved: QualityLevel; onChange: (c: QualityChoice) => void }) {
   return (
-    <label className="obs-quality">
-      <span>Kualitas{choice === "auto" ? ` (${OPTIONS.find((o) => o.value === resolved)?.label})` : ""}</span>
-      <select value={choice} onChange={(e) => onChange(e.target.value as QualityChoice)}>
+    <label
+      className="obs-quality"
+      style={{ whiteSpace: "nowrap", flex: "none" }}
+      title={`Kualitas aktif: ${OPTIONS.find((o) => o.value === resolved)?.label}`}
+    >
+      <span>Kualitas</span>
+      {/* Fixed width: changing the mode must not resize this control and shift the neighbouring button. */}
+      <select style={{ width: 112 }} value={choice} onChange={(e) => onChange(e.target.value as QualityChoice)}>
         {OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </label>

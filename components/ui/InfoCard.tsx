@@ -1,17 +1,6 @@
 "use client";
 import { useState } from "react";
 import { PLANET_BY_ID, SUN, isPlanetId } from "@/data/planets";
-import type { CameraMode } from "@/lib/camera/states";
-
-function fmtDuration(hours: number): string {
-  if (hours < 48) return `≈ ${hours.toLocaleString("id-ID", { maximumFractionDigits: 1 })} jam`;
-  return `≈ ${(hours / 24).toLocaleString("id-ID", { maximumFractionDigits: 1 })} hari`;
-}
-function fmtDays(days: number): string {
-  if (days > 700) return `≈ ${(days / 365.256).toLocaleString("id-ID", { maximumFractionDigits: 1 })} tahun`;
-  return `≈ ${days.toLocaleString("id-ID", { maximumFractionDigits: 0 })} hari`;
-}
-
 
 const CARD_CSS = `
 .obs-card-wrap {
@@ -41,80 +30,85 @@ const CARD_CSS = `
 }
 `;
 
+function fmtDuration(hours: number): string {
+  if (hours < 48) return `≈ ${hours.toLocaleString("id-ID", { maximumFractionDigits: 1 })} jam`;
+  return `≈ ${(hours / 24).toLocaleString("id-ID", { maximumFractionDigits: 1 })} hari`;
+}
+function fmtDays(days: number): string {
+  if (days > 700) return `≈ ${(days / 365.256).toLocaleString("id-ID", { maximumFractionDigits: 1 })} tahun`;
+  return `≈ ${days.toLocaleString("id-ID", { maximumFractionDigits: 0 })} hari`;
+}
+
 interface Props {
   id: string;
-  mode: CameraMode;
-  onExplore: () => void;
-  onPov: () => void;
   onBack: () => void;
   rotationEnabled: boolean;
   onToggleRotation: () => void;
 }
 
-export function InfoCard({ id, mode, onExplore, onPov, onBack, rotationEnabled, onToggleRotation }: Props) {
+export function InfoCard({ id, onBack, rotationEnabled, onToggleRotation }: Props) {
   const planet = isPlanetId(id) ? PLANET_BY_ID[id] : null;
   // On phones the panel starts collapsed so it never hides the planet that was just tapped.
   const [collapsed, setCollapsed] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches);
   const name = planet?.name ?? SUN.name;
-  const explored = mode === "PLANET_ORBIT";
-  const pov = mode === "POV_PLANET";
 
   return (
     <>
-    <style>{CARD_CSS}</style>
-    {collapsed && (
-      <button
-        type="button"
-        className="obs-card-tab"
-        onClick={() => setCollapsed(false)}
-        aria-expanded={false}
-        aria-controls="obs-info-card"
-        aria-label={`Buka informasi ${name}`}
-      >
-        <span aria-hidden="true">›</span>
-        <span>Info</span>
-      </button>
-    )}
-    <div className="obs-card-wrap">
-    <section id="obs-info-card" className={`obs-card${collapsed ? " is-collapsed" : ""}`} inert={collapsed} aria-live="polite" aria-label={`Informasi ${name}`}>
-      <div className="obs-card-head">
-        <div>
-          <p className="obs-eyebrow">{planet ? `Planet ${planet.kind}` : "Bintang"}</p>
-          <h2>{name}</h2>
-        </div>
-        <button type="button" className="obs-card-close" onClick={() => setCollapsed(true)} aria-label={`Tutup informasi ${name}`}>Tutup ‹</button>
-      </div>
-      {planet ? (
-        <dl className="obs-stats">
-          <div><dt>Jarak dari Matahari</dt><dd>{planet.semiMajorAxisAu.toLocaleString("id-ID")} AU</dd></div>
-          <div><dt>Rotasi</dt><dd>{fmtDuration(planet.rotationPeriodHours)}</dd></div>
-          <div><dt>Revolusi</dt><dd>{fmtDays(planet.revolutionPeriodDays)}</dd></div>
-          <div><dt>Kemiringan sumbu</dt><dd>{planet.axialTiltDeg.toLocaleString("id-ID")}°</dd></div>
-          <div><dt>Bulan</dt><dd>{planet.moonCount}</dd></div>
-        </dl>
-      ) : null}
-      <ul className="obs-facts">
-        {(planet?.facts ?? SUN.facts).slice(0, explored ? 3 : 2).map((f) => <li key={f}>{f}</li>)}
-      </ul>
-      {pov && planet && (
-        <p className="obs-note">
-          POV: {planet.name.toUpperCase()} — sudut pandang ruang angkasa di samping planet, bukan posisi di permukaannya.
-          Sumbu miring {planet.axialTiltDeg.toLocaleString("id-ID")}° terhadap bidang orbit.
-        </p>
+      <style>{CARD_CSS}</style>
+      {collapsed && (
+        <button
+          type="button"
+          className="obs-card-tab"
+          onClick={() => setCollapsed(false)}
+          aria-expanded={false}
+          aria-controls="obs-info-card"
+          aria-label={`Buka informasi ${name}`}
+        >
+          <span aria-hidden="true">›</span>
+          <span>Info</span>
+        </button>
       )}
-      {explored && planet && planet.pois.length > 0 && (
-        <ul className="obs-pois">
-          {planet.pois.map((p) => <li key={p.id}><strong>{p.label}.</strong> {p.text}</li>)}
-        </ul>
-      )}
-      <div className="obs-actions">
-        {!explored && <button type="button" onClick={onExplore}>Jelajahi</button>}
-        {planet && !pov && <button type="button" onClick={onPov}>Tampilan POV</button>}
-        {planet && <button type="button" onClick={onToggleRotation} aria-pressed={!rotationEnabled}>{rotationEnabled ? "Jeda rotasi" : "Lanjutkan rotasi"}</button>}
-        <button type="button" onClick={onBack}>Kembali ke Tata Surya</button>
+      <div className="obs-card-wrap">
+        <section id="obs-info-card" className={`obs-card${collapsed ? " is-collapsed" : ""}`} inert={collapsed} aria-live="polite" aria-label={`Informasi ${name}`}>
+          <div className="obs-card-head">
+            <div>
+              <p className="obs-eyebrow">{planet ? `Planet ${planet.kind}` : "Bintang"}</p>
+              <h2>{name}</h2>
+            </div>
+            <button type="button" className="obs-card-close" onClick={() => setCollapsed(true)} aria-label={`Tutup informasi ${name}`}>Tutup ‹</button>
+          </div>
+
+          {planet && (
+            <dl className="obs-stats">
+              <div><dt>Jarak dari Matahari</dt><dd>{planet.semiMajorAxisAu.toLocaleString("id-ID")} AU</dd></div>
+              <div><dt>Jari-jari</dt><dd>{planet.radiusKm.toLocaleString("id-ID")} km</dd></div>
+              <div><dt>Rotasi</dt><dd>{fmtDuration(planet.rotationPeriodHours)}</dd></div>
+              <div><dt>Revolusi</dt><dd>{fmtDays(planet.revolutionPeriodDays)}</dd></div>
+              <div><dt>Kemiringan sumbu</dt><dd>{planet.axialTiltDeg.toLocaleString("id-ID")}°</dd></div>
+              <div><dt>Bulan</dt><dd>{planet.moonCount}</dd></div>
+            </dl>
+          )}
+
+          <ul className="obs-facts">
+            {(planet?.facts ?? SUN.facts).map((f) => <li key={f}>{f}</li>)}
+          </ul>
+
+          {planet && planet.pois.length > 0 && (
+            <ul className="obs-pois">
+              {planet.pois.map((p) => <li key={p.id}><strong>{p.label}.</strong> {p.text}</li>)}
+            </ul>
+          )}
+
+          <div className="obs-actions">
+            {planet && (
+              <button type="button" onClick={onToggleRotation} aria-pressed={!rotationEnabled}>
+                {rotationEnabled ? "Jeda rotasi" : "Lanjutkan rotasi"}
+              </button>
+            )}
+            <button type="button" onClick={onBack}>Kembali ke Tata Surya</button>
+          </div>
+        </section>
       </div>
-    </section>
-    </div>
     </>
   );
 }
