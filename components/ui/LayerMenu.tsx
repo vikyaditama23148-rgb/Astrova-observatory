@@ -2,6 +2,7 @@
 import type { Layers } from "@/components/observatory/context";
 
 const ITEMS: { key: keyof Layers; label: string }[] = [
+  { key: "orbits", label: "Garis orbit" },
   { key: "asteroids", label: "Sabuk asteroid" },
   { key: "comets", label: "Komet" },
   { key: "meteoroids", label: "Meteoroid" },

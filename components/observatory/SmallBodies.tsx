@@ -104,7 +104,7 @@ function buildTail(dust: number, ion: number, seed: number) {
 }
 
 function Comet({ data, tier, index }: { data: CometData; tier: 0 | 1 | 2 | 3; index: number }) {
-  const { sim } = useScene();
+  const { sim, layers } = useScene();
   const dot = useDotTexture();
   const group = useRef<THREE.Group>(null);
   const nucleus = useRef<THREE.Mesh>(null);
@@ -206,7 +206,7 @@ function Comet({ data, tier, index }: { data: CometData; tier: 0 | 1 | 2 | 3; in
 
   return (
     <>
-      <primitive object={orbitLine} raycast={() => null} />
+      {layers.orbits && <primitive object={orbitLine} raycast={() => null} />}
       <group ref={group}>
         <mesh ref={nucleus} raycast={() => null}>
           <icosahedronGeometry args={[0.14, 1]} />

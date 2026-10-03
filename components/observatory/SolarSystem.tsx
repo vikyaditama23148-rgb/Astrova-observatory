@@ -19,7 +19,7 @@ export function SolarSystem() {
       <ambientLight intensity={0.25} />
       <Starfield count={quality.starCount} />
       <Sun />
-      <OrbitSystem planets={PLANETS} selectedId={view.planetId} />
+      {layers.orbits && <OrbitSystem planets={PLANETS} selectedId={view.planetId} />}
       {layers.asteroids && <AsteroidBelt />}
       {layers.dust && <InterplanetaryDust />}
       {layers.kuiper && <KuiperBelt />}

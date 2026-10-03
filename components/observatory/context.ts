@@ -15,6 +15,7 @@ export interface SimState {
 }
 
 export interface Layers {
+  orbits: boolean;
   asteroids: boolean;
   comets: boolean;
   meteoroids: boolean;
@@ -24,7 +25,7 @@ export interface Layers {
   wind: boolean;
 }
 
-export const DEFAULT_LAYERS: Layers = { asteroids: true, comets: true, meteoroids: true, kuiper: true, oort: true, dust: true, wind: true };
+export const DEFAULT_LAYERS: Layers = { orbits: true, asteroids: true, comets: true, meteoroids: true, kuiper: true, oort: true, dust: true, wind: true };
 
 export interface ObservatoryScene {
   layers: Layers;
