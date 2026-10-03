@@ -36,7 +36,7 @@ export function CameraController() {
     switch (view.mode) {
       case "SOLAR_SYSTEM":
         t.dir.copy(DEFAULT_DIR); t.distance = DEFAULT_DISTANCE;
-        c.minDistance = 12; c.maxDistance = 220;
+        c.minDistance = 12; c.maxDistance = 800;
         break;
       case "PLANET_FOCUS":
       case "PLANET_ORBIT":
@@ -57,7 +57,7 @@ export function CameraController() {
         break;
       }
       case "FREE_SPACE":
-        c.minDistance = 4; c.maxDistance = 260;
+        c.minDistance = 4; c.maxDistance = 900;
         t.active = false;
         return;
     }

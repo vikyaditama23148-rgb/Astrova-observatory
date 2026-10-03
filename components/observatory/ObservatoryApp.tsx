@@ -9,10 +9,11 @@ import { formatSimTime, type SpeedMultiplier } from "@/lib/simulation/clock";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { FallbackInfo } from "@/components/ui/FallbackInfo";
 import { InfoCard } from "@/components/ui/InfoCard";
+import { LayerMenu } from "@/components/ui/LayerMenu";
 import { PlanetNav } from "@/components/ui/PlanetNav";
 import { QualityMenu } from "@/components/ui/QualityMenu";
 import { SimControls } from "@/components/ui/SimControls";
-import type { ObservatoryScene, SimState } from "./context";
+import { DEFAULT_LAYERS, type Layers, type ObservatoryScene, type SimState } from "./context";
 import type * as THREE from "three";
 
 const ObservatoryCanvas = dynamic(() => import("./ObservatoryCanvas"), { ssr: false });
@@ -24,6 +25,7 @@ export function ObservatoryApp() {
   const [view, dispatch] = useReducer(viewReducer, INITIAL_VIEW);
   const [speed, setSpeed] = useState<SpeedMultiplier>(10);
   const [rotationEnabled, setRotationEnabled] = useState(true);
+  const [layers, setLayers] = useState<Layers>(DEFAULT_LAYERS);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [ready, setReady] = useState(false);
   const [upgraded, setUpgraded] = useState(0);
@@ -85,6 +87,7 @@ export function ObservatoryApp() {
     const el = document.getElementById("obs-time");
     if (el) el.textContent = formatSimTime(0);
   }, []);
+  const toggleLayer = useCallback((key: keyof Layers) => setLayers((l) => ({ ...l, [key]: !l[key] })), []);
   const changeQuality = useCallback((c: QualityChoice) => {
     setChoice(c);
     try { window.localStorage.setItem(QUALITY_STORAGE_KEY, c); } catch { /* ignore */ }
@@ -94,8 +97,8 @@ export function ObservatoryApp() {
   const onReady = useCallback(() => setReady(true), []);
 
   const scene: ObservatoryScene = useMemo(
-    () => ({ sim, bodies, quality, view, reducedMotion, onSelect, onTextureUpgraded }),
-    [quality, view, reducedMotion, onSelect, onTextureUpgraded],
+    () => ({ sim, bodies, quality, view, reducedMotion, onSelect, onTextureUpgraded, layers }),
+    [quality, view, reducedMotion, onSelect, onTextureUpgraded, layers],
   );
 
   const noWebgl = caps !== null && !caps.webgl;
@@ -129,6 +132,8 @@ export function ObservatoryApp() {
       {view.planetId && (
         <InfoCard id={view.planetId} onBack={() => dispatch({ type: "reset" })} rotationEnabled={rotationEnabled} onToggleRotation={toggleRotation} />
       )}
+
+      <LayerMenu layers={layers} onToggle={toggleLayer} />
 
       <footer className="obs-footer">
         <PlanetNav selectedId={view.planetId} onSelect={onSelect} />

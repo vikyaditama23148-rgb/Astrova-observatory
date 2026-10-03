@@ -14,7 +14,20 @@ export interface SimState {
   rotationEnabled: boolean;
 }
 
+export interface Layers {
+  asteroids: boolean;
+  comets: boolean;
+  meteoroids: boolean;
+  kuiper: boolean;
+  oort: boolean;
+  dust: boolean;
+  wind: boolean;
+}
+
+export const DEFAULT_LAYERS: Layers = { asteroids: true, comets: true, meteoroids: true, kuiper: true, oort: true, dust: true, wind: true };
+
 export interface ObservatoryScene {
+  layers: Layers;
   sim: MutableRefObject<SimState>;
   bodies: MutableRefObject<Map<string, THREE.Object3D>>;
   quality: QualitySettings;
