@@ -93,16 +93,14 @@ const _dir = new THREE.Vector3();
 function buildTail(dust: number, ion: number, seed: number) {
   const rnd = mulberry32(seed);
   const n = dust + ion;
-  const t = new Float32Array(n), s1 = new Float32Array(n), s2 = new Float32Array(n), colors = new Float32Array(n * 3);
+  const phase = new Float32Array(n), v = new Float32Array(n), s1 = new Float32Array(n), s2 = new Float32Array(n);
   for (let i = 0; i < n; i++) {
     const isIon = i >= dust;
-    t[i] = Math.pow(rnd(), 1.6);
+    phase[i] = rnd(); // where along the tail this particle starts (0 = nucleus, 1 = tail end)
+    v[i] = (0.6 + rnd() * 0.8) * (isIon ? 1.5 : 1); // per-particle flow speed so the stream looks organic
     s1[i] = gauss(rnd); s2[i] = gauss(rnd);
-    const fade = Math.pow(1 - t[i], 1.3);
-    if (isIon) colors.set([0.45 * fade, 0.7 * fade, 1.0 * fade], i * 3);
-    else colors.set([1.0 * fade, 0.92 * fade, 0.78 * fade], i * 3);
   }
-  return { n, dust, t, s1, s2, colors };
+  return { n, dust, phase, v, s1, s2 };
 }
 
 function Comet({ data, tier, index }: { data: CometData; tier: 0 | 1 | 2 | 3; index: number }) {
@@ -112,6 +110,7 @@ function Comet({ data, tier, index }: { data: CometData; tier: 0 | 1 | 2 | 3; in
   const nucleus = useRef<THREE.Mesh>(null);
   const coma = useRef<THREE.Sprite>(null);
   const pointsRef = useRef<THREE.Points>(null);
+  const flow = useRef(0);
 
   const [dustN, ionN] = TAIL_COUNTS[tier];
   const tail = useMemo(() => buildTail(dustN, ionN, 1000 + index * 17), [dustN, ionN, index]);
@@ -119,7 +118,7 @@ function Comet({ data, tier, index }: { data: CometData; tier: 0 | 1 | 2 | 3; in
   const tailGeometry = useMemo(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(tail.n * 3), 3));
-    g.setAttribute("color", new THREE.BufferAttribute(tail.colors, 3));
+    g.setAttribute("color", new THREE.BufferAttribute(new Float32Array(tail.n * 3), 3));
     return g;
   }, [tail]);
   useEffect(() => () => tailGeometry.dispose(), [tailGeometry]);
@@ -136,7 +135,10 @@ function Comet({ data, tier, index }: { data: CometData; tier: 0 | 1 | 2 | 3; in
   const labelTex = useMemo(() => createLabelTexture(data.name), [data.name]);
   useEffect(() => () => labelTex.dispose(), [labelTex]);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
+    // Tail particles flow in real time (decorative), frozen while the simulation is paused.
+    if (sim.current.speed !== 0) flow.current += Math.min(delta, 0.05);
+    const clock = flow.current;
     const hours = sim.current.hours;
     const cur = cometVisualPosition(data, hours);
     const nxt = cometVisualPosition(data, hours + 12);
@@ -152,7 +154,7 @@ function Comet({ data, tier, index }: { data: CometData; tier: 0 | 1 | 2 | 3; in
     if (group.current) group.current.position.copy(_p);
     if (nucleus.current) nucleus.current.position.set(0, 0, 0);
     if (coma.current) {
-      coma.current.scale.setScalar(1.2 + act * 2.6);
+      coma.current.scale.setScalar((1.2 + act * 2.6) * (1 + 0.07 * Math.sin(clock * 2.1)));
       coma.current.material.opacity = 0.2 + 0.5 * act;
     }
 
@@ -168,11 +170,18 @@ function Comet({ data, tier, index }: { data: CometData; tier: 0 | 1 | 2 | 3; in
     _u2.crossVectors(_d, _u1);
 
     const attr = pts.geometry.attributes.position as THREE.BufferAttribute;
+    const colAttr = pts.geometry.attributes.color as THREE.BufferAttribute;
     const arr = attr.array as Float32Array;
+    const carr = colAttr.array as Float32Array;
     for (let i = 0; i < tail.n; i++) {
-      const t = tail.t[i];
+      // Each particle drifts from the nucleus to the tail end, then wraps around: a continuous stream.
+      const u = (tail.phase[i] + clock * tail.v[i] * 0.18) % 1;
+      const t = Math.pow(u, 1.5); // denser near the head
+      const wob1 = tail.s1[i] + 0.35 * Math.sin(clock * 1.7 + i * 0.37);
+      const wob2 = tail.s2[i] + 0.35 * Math.cos(clock * 1.3 + i * 0.29);
+      const isDust = i < tail.dust;
       let dist: number, lat: number;
-      if (i < tail.dust) {
+      if (isDust) {
         // Dust tail: curved backward along the orbit, wide.
         _dir.copy(_d).addScaledVector(_v, -0.45 * t).normalize();
         dist = t * L * 0.85;
@@ -181,13 +190,18 @@ function Comet({ data, tier, index }: { data: CometData; tier: 0 | 1 | 2 | 3; in
         // Ion (plasma) tail: straight, thin, away from the Sun.
         _dir.copy(_d);
         dist = t * L * 1.1;
-        lat = 0.006 * L;
+        lat = (0.006 + 0.01 * t) * L;
       }
-      arr[i * 3] = _dir.x * dist + (_u1.x * tail.s1[i] + _u2.x * tail.s2[i]) * lat;
-      arr[i * 3 + 1] = _dir.y * dist + (_u1.y * tail.s1[i] + _u2.y * tail.s2[i]) * lat;
-      arr[i * 3 + 2] = _dir.z * dist + (_u1.z * tail.s1[i] + _u2.z * tail.s2[i]) * lat;
+      arr[i * 3] = _dir.x * dist + (_u1.x * wob1 + _u2.x * wob2) * lat;
+      arr[i * 3 + 1] = _dir.y * dist + (_u1.y * wob1 + _u2.y * wob2) * lat;
+      arr[i * 3 + 2] = _dir.z * dist + (_u1.z * wob1 + _u2.z * wob2) * lat;
+
+      const fade = Math.pow(1 - t, 1.3) * Math.min(1, u / 0.06); // fade in at the nucleus, fade out along the tail
+      if (isDust) { carr[i * 3] = fade; carr[i * 3 + 1] = 0.92 * fade; carr[i * 3 + 2] = 0.78 * fade; }
+      else { carr[i * 3] = 0.45 * fade; carr[i * 3 + 1] = 0.7 * fade; carr[i * 3 + 2] = fade; }
     }
     attr.needsUpdate = true;
+    colAttr.needsUpdate = true;
   });
 
   return (
