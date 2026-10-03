@@ -11,6 +11,7 @@ import { FallbackInfo } from "@/components/ui/FallbackInfo";
 import { InfoCard } from "@/components/ui/InfoCard";
 import { LayerMenu } from "@/components/ui/LayerMenu";
 import { PlanetNav } from "@/components/ui/PlanetNav";
+import { QualityHint } from "@/components/ui/QualityHint";
 import { QualityMenu } from "@/components/ui/QualityMenu";
 import { SimControls } from "@/components/ui/SimControls";
 import { DEFAULT_LAYERS, type Layers, type ObservatoryScene, type SimState } from "./context";
@@ -18,6 +19,10 @@ import type * as THREE from "three";
 
 const ObservatoryCanvas = dynamic(() => import("./ObservatoryCanvas"), { ssr: false });
 const PLANET_COUNT = 8;
+const HINT_DISMISSED_KEY = "astrova-observatory:quality-hint-dismissed";
+const HINT_COUNT_KEY = "astrova-observatory:quality-hint-count";
+const HINT_MAX_SHOWS = 3; // the hint appears on at most this many visits unless the user dismisses it earlier
+const HINT_DELAY_MS = 5000;
 
 export function ObservatoryApp() {
   const [caps, setCaps] = useState<Capabilities | null>(null);
@@ -31,6 +36,9 @@ export function ObservatoryApp() {
   const [upgraded, setUpgraded] = useState(0);
   const [debug, setDebug] = useState(false);
   const [returnTo, setReturnTo] = useState<string | null>(null);
+  const [hintEligible, setHintEligible] = useState(false); // from storage: not dismissed and not shown too many times
+  const [hintDelay, setHintDelay] = useState(false);
+  const [hintClosed, setHintClosed] = useState(false); // closed during this visit
 
   const sim = useRef<SimState>({ hours: 0, rotHours: 0, speed: 10, rotationEnabled: true });
   const bodies = useRef(new Map<string, THREE.Object3D>());
@@ -44,6 +52,11 @@ export function ObservatoryApp() {
         const stored = window.localStorage.getItem(QUALITY_STORAGE_KEY);
         if (isQualityChoice(stored)) setChoice(stored);
       } catch { /* storage may be blocked; ignore */ }
+      try {
+        const dismissed = window.localStorage.getItem(HINT_DISMISSED_KEY) === "1";
+        const shown = parseInt(window.localStorage.getItem(HINT_COUNT_KEY) ?? "0", 10) || 0;
+        setHintEligible(!dismissed && shown < HINT_MAX_SHOWS);
+      } catch { setHintEligible(true); }
       const params = new URLSearchParams(window.location.search);
       const ctx = parseContext(params);
       setReturnTo(ctx.returnTo);
@@ -73,6 +86,36 @@ export function ObservatoryApp() {
 
   const resolved = caps ? resolveQuality(choice, caps.hints) : "balanced";
   const quality = QUALITY[resolved];
+  const noWebgl = caps !== null && !caps.webgl;
+
+  // Quality hint: only for people on automatic quality whose level can still go up, a few seconds after the scene is ready.
+  useEffect(() => {
+    if (!ready) return;
+    const id = window.setTimeout(() => setHintDelay(true), HINT_DELAY_MS);
+    return () => window.clearTimeout(id);
+  }, [ready]);
+  const showHint = hintEligible && hintDelay && !hintClosed && !noWebgl && choice === "auto" && (resolved === "performance" || resolved === "balanced");
+  useEffect(() => {
+    if (!showHint) return;
+    try {
+      const n = parseInt(window.localStorage.getItem(HINT_COUNT_KEY) ?? "0", 10) || 0;
+      window.localStorage.setItem(HINT_COUNT_KEY, String(n + 1));
+    } catch { /* ignore */ }
+  }, [showHint]);
+  const dismissHint = useCallback(() => {
+    try { window.localStorage.setItem(HINT_DISMISSED_KEY, "1"); } catch { /* ignore */ }
+    setHintClosed(true);
+  }, []);
+  const autoHideHint = useCallback(() => setHintClosed(true), []);
+  const openQualityMenu = useCallback(() => {
+    dismissHint();
+    const el = document.getElementById("obs-quality-select") as (HTMLSelectElement & { showPicker?: () => void }) | null;
+    if (!el) return;
+    el.focus();
+    el.classList.add("obs-pulse");
+    window.setTimeout(() => el.classList.remove("obs-pulse"), 3500);
+    try { el.showPicker?.(); } catch { /* not supported or no user activation; the highlight still shows */ }
+  }, [dismissHint]);
 
   const changeSpeed = useCallback((s: SpeedMultiplier) => { sim.current.speed = s; setSpeed(s); }, []);
   const toggleRotation = useCallback(() => {
@@ -91,6 +134,8 @@ export function ObservatoryApp() {
   const changeQuality = useCallback((c: QualityChoice) => {
     setChoice(c);
     try { window.localStorage.setItem(QUALITY_STORAGE_KEY, c); } catch { /* ignore */ }
+    try { window.localStorage.setItem(HINT_DISMISSED_KEY, "1"); } catch { /* ignore */ } // they found the setting
+    setHintClosed(true);
   }, []);
   const onSelect = useCallback((id: string) => dispatch({ type: "select", planetId: id }), []);
   const onTextureUpgraded = useCallback(() => setUpgraded((n) => Math.min(PLANET_COUNT, n + 1)), []);
@@ -100,8 +145,6 @@ export function ObservatoryApp() {
     () => ({ sim, bodies, quality, view, reducedMotion, onSelect, onTextureUpgraded, layers }),
     [quality, view, reducedMotion, onSelect, onTextureUpgraded, layers],
   );
-
-  const noWebgl = caps !== null && !caps.webgl;
 
   return (
     <main className="obs-root">
@@ -118,7 +161,17 @@ export function ObservatoryApp() {
       <header className="obs-header">
         <div>
           <h1>ASTROVA OBSERVATORY</h1>
-          <p>Jelajahi Tata Surya.</p>
+          {view.planetId ? (
+            <button
+              type="button"
+              onClick={() => dispatch({ type: "reset" })}
+              style={{ marginTop: 4, minHeight: 36, padding: "0 14px", borderRadius: 999, border: "1px solid var(--accent)", background: "var(--panel)", color: "var(--text)", fontSize: "0.8rem", cursor: "pointer", backdropFilter: "blur(6px)", whiteSpace: "nowrap" }}
+            >
+              ← Kembali ke Tata Surya
+            </button>
+          ) : (
+            <p>Jelajahi Tata Surya.</p>
+          )}
         </div>
         <div className="obs-header-right" style={{ flexWrap: "nowrap" }}>
           <span className="obs-badge" title="Ukuran dan jarak dikompresi agar semua benda muat di layar">Visualisasi tidak sesuai skala</span>
@@ -130,10 +183,14 @@ export function ObservatoryApp() {
       {debug && <div id="obs-debug" className="obs-debug" aria-hidden="true">memuat statistik…</div>}
 
       {view.planetId && (
-        <InfoCard id={view.planetId} onBack={() => dispatch({ type: "reset" })} rotationEnabled={rotationEnabled} onToggleRotation={toggleRotation} />
+        <InfoCard id={view.planetId} rotationEnabled={rotationEnabled} onToggleRotation={toggleRotation} />
       )}
 
       <LayerMenu layers={layers} onToggle={toggleLayer} />
+
+      {showHint && (resolved === "performance" || resolved === "balanced") && (
+        <QualityHint level={resolved} onOpenMenu={openQualityMenu} onDismiss={dismissHint} onAutoHide={autoHideHint} />
+      )}
 
       <footer className="obs-footer">
         <PlanetNav selectedId={view.planetId} onSelect={onSelect} />

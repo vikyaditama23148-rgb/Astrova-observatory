@@ -41,12 +41,11 @@ function fmtDays(days: number): string {
 
 interface Props {
   id: string;
-  onBack: () => void;
   rotationEnabled: boolean;
   onToggleRotation: () => void;
 }
 
-export function InfoCard({ id, onBack, rotationEnabled, onToggleRotation }: Props) {
+export function InfoCard({ id, rotationEnabled, onToggleRotation }: Props) {
   const planet = isPlanetId(id) ? PLANET_BY_ID[id] : null;
   // On phones the panel starts collapsed so it never hides the planet that was just tapped.
   const [collapsed, setCollapsed] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches);
@@ -99,14 +98,13 @@ export function InfoCard({ id, onBack, rotationEnabled, onToggleRotation }: Prop
             </ul>
           )}
 
-          <div className="obs-actions">
-            {planet && (
+          {planet && (
+            <div className="obs-actions">
               <button type="button" onClick={onToggleRotation} aria-pressed={!rotationEnabled}>
                 {rotationEnabled ? "Jeda rotasi" : "Lanjutkan rotasi"}
               </button>
-            )}
-            <button type="button" onClick={onBack}>Kembali ke Tata Surya</button>
-          </div>
+            </div>
+          )}
         </section>
       </div>
     </>
