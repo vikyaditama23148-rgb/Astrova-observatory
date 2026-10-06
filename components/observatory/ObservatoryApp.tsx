@@ -9,6 +9,7 @@ import { formatSimTime, type SpeedMultiplier } from "@/lib/simulation/clock";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { FallbackInfo } from "@/components/ui/FallbackInfo";
 import { InfoCard } from "@/components/ui/InfoCard";
+import { IntroCredits } from "@/components/ui/IntroCredits";
 import { LayerMenu } from "@/components/ui/LayerMenu";
 import { PlanetNav } from "@/components/ui/PlanetNav";
 import { QualityHint } from "@/components/ui/QualityHint";
@@ -39,6 +40,7 @@ export function ObservatoryApp() {
   const [hintEligible, setHintEligible] = useState(false); // from storage: not dismissed and not shown too many times
   const [hintDelay, setHintDelay] = useState(false);
   const [hintClosed, setHintClosed] = useState(false); // closed during this visit
+  const [introDone, setIntroDone] = useState(false); // opening credits; add ?intro=0 to the URL to skip them
 
   const sim = useRef<SimState>({ hours: 0, rotHours: 0, speed: 10, rotationEnabled: true });
   const bodies = useRef(new Map<string, THREE.Object3D>());
@@ -61,6 +63,7 @@ export function ObservatoryApp() {
       const ctx = parseContext(params);
       setReturnTo(ctx.returnTo);
       setDebug(params.get("debug") === "1");
+      if (params.get("intro") === "0") setIntroDone(true);
       if (ctx.selectedPlanet) dispatch({ type: "select", planetId: ctx.selectedPlanet });
     });
     return () => window.cancelAnimationFrame(raf);
@@ -90,10 +93,10 @@ export function ObservatoryApp() {
 
   // Quality hint: only for people on automatic quality whose level can still go up, a few seconds after the scene is ready.
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !introDone) return; // never show the hint over the opening credits
     const id = window.setTimeout(() => setHintDelay(true), HINT_DELAY_MS);
     return () => window.clearTimeout(id);
-  }, [ready]);
+  }, [ready, introDone]);
   const showHint = hintEligible && hintDelay && !hintClosed && !noWebgl && choice === "auto" && (resolved === "performance" || resolved === "balanced");
   useEffect(() => {
     if (!showHint) return;
@@ -218,6 +221,7 @@ export function ObservatoryApp() {
       {ready && upgraded < PLANET_COUNT && (
         <p className="obs-progress" role="status">Menyempurnakan tekstur {upgraded}/{PLANET_COUNT}</p>
       )}
+      {!introDone && <IntroCredits onDone={() => setIntroDone(true)} />}
     </main>
   );
 }
