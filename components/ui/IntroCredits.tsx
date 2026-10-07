@@ -1,7 +1,9 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 
-const CREDIT_MS = 5000; // each credit card stays on screen for 5 seconds
+const CREDIT_MS = 10000; // each credit card stays on screen for 10 seconds
+const CREDIT_EDGE_MS = 900; // fade in / fade out time inside each credit, independent of its length
+const EDGE_PCT = (CREDIT_EDGE_MS / CREDIT_MS) * 100;
 const FADE_MS = 900; // fade from the credits into the observatory
 
 const CSS = `
@@ -31,8 +33,8 @@ const CSS = `
 }
 @keyframes obsCreditIn {
   0% { opacity: 0; transform: translateY(10px) scale(0.985); }
-  14% { opacity: 1; transform: none; }
-  86% { opacity: 1; transform: translateY(-4px) scale(1.008); }
+  ${EDGE_PCT}% { opacity: 1; transform: none; }
+  ${100 - EDGE_PCT}% { opacity: 1; transform: translateY(-4px) scale(1.008); }
   100% { opacity: 0; transform: translateY(-9px) scale(1.012); }
 }
 @keyframes obsCreditLine { from { transform: scaleX(0); } to { transform: scaleX(1); } }
@@ -42,7 +44,7 @@ export function IntroCredits({ onDone }: { onDone: () => void }) {
   const [mounted, setMounted] = useState(false);
   const [stage, setStage] = useState<0 | 1 | 2>(0); // 0: credit one, 1: credit two, 2: fading out
 
-  // Rendered only after mount so the 5-second CSS animations start together with the timers (not at server paint).
+  // Rendered only after mount so the CSS animations start together with the timers (not at server paint).
   useEffect(() => {
     const raf = window.requestAnimationFrame(() => setMounted(true));
     return () => window.cancelAnimationFrame(raf);
