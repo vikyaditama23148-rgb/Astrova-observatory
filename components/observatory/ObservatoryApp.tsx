@@ -219,7 +219,22 @@ export function ObservatoryApp() {
         </div>
       )}
       {ready && upgraded < PLANET_COUNT && (
-        <p className="obs-progress" role="status">Menyempurnakan tekstur {upgraded}/{PLANET_COUNT}</p>
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 40,
+            width: "min(280px, calc(100% - 48px))", padding: "14px 18px", textAlign: "center", pointerEvents: "none",
+            background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 12, backdropFilter: "blur(8px)",
+          }}
+        >
+          <p style={{ margin: "0 0 10px", fontSize: "0.82rem", color: "var(--text)" }}>
+            Menyempurnakan tekstur {upgraded}/{PLANET_COUNT}
+          </p>
+          <div style={{ height: 4, borderRadius: 999, background: "rgba(127, 208, 255, 0.18)", overflow: "hidden" }}>
+            <div style={{ width: `${(upgraded / PLANET_COUNT) * 100}%`, height: "100%", background: "var(--accent)", transition: "width 0.3s ease" }} />
+          </div>
+        </div>
       )}
       {!introDone && <IntroCredits onDone={() => setIntroDone(true)} />}
     </main>
